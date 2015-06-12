@@ -1,7 +1,7 @@
 class Bid < ActiveRecord::Base
   belongs_to :item
-  # belongs_to :bidder, class_name: :User, foreign_key: :bidder_id
-  belongs_to :user
+  belongs_to :bidder, class_name: :User, foreign_key: :bidder_id
+  # belongs_to :user
 
   validate :check_for_duplicate_users
 

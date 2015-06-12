@@ -1,28 +1,4 @@
-class WelcomeController < ApplicationController
-  def create
-    # data = { "data_required" => { "table" => { "bids" }
-
-    # }
-  end
-
-  def index
-    @table_names, @table_info = [], []
-
-    Rails.application.eager_load!
-    schema = ActiveRecord::Base.descendants
-
-    get_tables_names(schema)
-    get_tables_classes
-    get_tables_info
-
-    @has_many, @belongs_to, @through, @other = [], [], [], []
-
-    @table_classes.each {|table| get_tables_associations(table)}
-    @table_associations = [{"has_many" => @has_many},
-        {"belongs_to" => @belongs_to},
-        {"other" => @other}]
-  end
-
+class ErdController < ApplicationController
   def get_tables_names(schema)
     schema[1..-1].each {|table| @table_names << table.to_s }
   end
@@ -125,6 +101,36 @@ class WelcomeController < ApplicationController
     end
   end
 
-  # z = { "first_table" => "sherif", "second_table" => "younger, hot chick", "through" => "sherif's smooth charm", "relationship_type" => ""
-    # }
+  def index
+    @table_names, @table_info = [], []
+
+    Rails.application.eager_load!
+    schema = ActiveRecord::Base.descendants
+
+    get_tables_names(schema)
+    get_tables_classes
+    get_tables_info
+
+    @has_many, @belongs_to, @through, @other = [], [], [], []
+
+    @table_classes.each {|table| get_tables_associations(table)}
+    @table_associations = [{"has_many" => @has_many},
+        {"belongs_to" => @belongs_to},
+        {"other" => @other}]
+
+    @table_info << { "rob" => [
+      { name: "rob", type: "aussy", null: false, default: "super sexy" },
+      { name: "is" },
+      { name: "super" },
+      { name: "sexy" }
+      ]}
+
+    @table_associations << { "dating" => {"first_table" => "rob", "second_table" => "angie", "source" => "dbc", "through" => "shared nerdiness", "foreign key" => "rob's amazing cock" } }
+
+    render json: { "tables" => @table_info, "associations" => @table_associations }
+  end
+
+  def create
+    p params
+  end
 end

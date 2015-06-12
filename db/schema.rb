@@ -13,9 +13,12 @@
 
 ActiveRecord::Schema.define(version: 20150612025557) do
 
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
   create_table "bids", force: :cascade do |t|
     t.integer  "item_id"
-    t.integer  "user_id"
+    t.integer  "bidder_id"
     t.float    "amount"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -35,7 +38,7 @@ ActiveRecord::Schema.define(version: 20150612025557) do
     t.datetime "updated_at",  null: false
   end
 
-  add_index "categories_items", ["category_id", "item_id"], name: "index_categories_items_on_category_id_and_item_id"
+  add_index "categories_items", ["category_id", "item_id"], name: "index_categories_items_on_category_id_and_item_id", using: :btree
 
   create_table "items", force: :cascade do |t|
     t.integer  "categories_items_id"
@@ -52,7 +55,7 @@ ActiveRecord::Schema.define(version: 20150612025557) do
     t.datetime "updated_at",                          null: false
   end
 
-  add_index "items", ["seller_id", "buyer_id"], name: "index_items_on_seller_id_and_buyer_id"
+  add_index "items", ["seller_id", "buyer_id"], name: "index_items_on_seller_id_and_buyer_id", using: :btree
 
   create_table "users", force: :cascade do |t|
     t.string   "username"

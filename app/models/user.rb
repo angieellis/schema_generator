@@ -2,7 +2,7 @@ class User < ActiveRecord::Base
   include BCrypt
   has_many :purchases, class_name: :Item, foreign_key: :buyer_id
   has_many :sales, class_name: :Item, foreign_key: :seller_id
-  has_many :bids#, class_name: :Bid, foreign_key: :bidder_id
+  has_many :bids, class_name: :Bid, foreign_key: :bidder_id
   #has_many :bid_on_items, through: :bids, source: :item
 
   validates :username, uniqueness: true, presence: true
