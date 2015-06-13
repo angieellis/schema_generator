@@ -76,34 +76,43 @@ class WelcomeController < ApplicationController
     determine_association(table.table_name.to_s, association.name.to_s, get_foreign_key(association), association)
   end
 
-  def get_foreign_key(association)
+  def get_foreign_key(table_name, association)
     if association.options.key?(:foreign_key)
       return association.options[:foreign_key]
     else
-      return ""
+      return table_name.singularize + "_id"
     end
   end
 
   def determine_association(first_table, second_table, foreign_key, association)
+    second_table = determine_alias(association)
     relationship = define_relationship(first_table, second_table, foreign_key)
     association_name = association.class.to_s
 
     if association_name.include? "HasMany"
       @has_many << relationship
     elsif association_name.include? "BelongsTo"
-      @belongs_to << relationship
+      @belongs_to << define_relationship(first_table, second_table.pluralize, foreign_key)
     elsif association_name.include? "Through"
       delegate = association.delegate_reflection
       relationship_type = determine_relationship(delegate)
 
       relationship = { "first_table" => first_table,
-        "second_table" => delegate.name.to_s,
+        "second_table" => second_table,
         "through" => delegate.options[:through].to_s,
         "relationship_type" => relationship_type }
 
       @through << relationship
     else
       @other << relationship
+    end
+  end
+
+  def determine_alias(association)
+    if association.options.key?(:class_name)
+      return association.options[:class_name].to_s.downcase
+    else
+      return association.name.to_s
     end
   end
 
@@ -125,6 +134,6 @@ class WelcomeController < ApplicationController
     end
   end
 
-  # z = { "first_table" => "sherif", "second_table" => "younger, hot chick", "through" => "sherif's smooth charm", "relationship_type" => ""
-    # }
+  z = { "first_table" => "sherif", "second_table" => "younger, kinda sexy chick", "through" => "sherif's acid eyes and cult like bullshit", "relationship_type" => "always inappropriate!", "options" => "but good for him"
+    }
 end
