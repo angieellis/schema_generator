@@ -68,14 +68,14 @@ class ErdController < ApplicationController
   end
 
   def get_association_info(table, association)
-    determine_association(table.table_name.to_s, association.name.to_s, get_foreign_key(table.table_name.to_s, association), association)
+    determine_association(table.table_name.to_s.pluralize, association.name.to_s.pluralize, get_foreign_key(table.table_name.to_s, association), association)
   end
 
   def get_foreign_key(table_name, association)
     if association.options.key?(:foreign_key)
       return association.options[:foreign_key]
     else
-      return ""
+      return nil
     end
   end
 
@@ -84,11 +84,17 @@ class ErdController < ApplicationController
     association_type = determine_relationship(association)
 
     if association_type == "has_one"
-      @has_one << define_has_relationship(first_table, second_table, foreign_key)
+      fk = has_relationship_fk(foreign_key, first_table)
+      @has_one << define_relationship(first_table, second_table, @primary_keys[second_table], fk)
     elsif association_type == "has_many"
-      @has_many << define_has_relationship(first_table, second_table, foreign_key)
+      fk = has_relationship_fk(foreign_key, first_table)
+      @has_many << define_relationship(first_table, second_table, @primary_keys[first_table], fk)
+    elsif association_type == "has_and_belongs_to_many"
+      fk = has_relationship_fk(foreign_key, first_table)
+      @has_and_belongs_to_many << define_relationship(first_table, second_table, @primary_keys[first_table], fk)
     elsif association_type == "belongs_to"
-      @belongs_to << define_belongs_relationship(first_table, second_table.pluralize, foreign_key)
+      belongs_relationship_fk(foreign_key, second_table)
+      @belongs_to << define_relationship(first_table, second_table, @primary_keys[first_table], fk)
     elsif association_type == "through"
       delegate = association.delegate_reflection
       relationship_type = determine_relationship(delegate)
@@ -108,18 +114,24 @@ class ErdController < ApplicationController
     if association.options.key?(:class_name)
       return association.options[:class_name].to_s.downcase.pluralize
     else
-      return association.name.to_s
+      return association.name.to_s.pluralize
     end
   end
 
-  def define_has_relationship(first_table, second_table, foreign_key)
-    foreign_key = first_table.singularize + "_id" if foreign_key == ""
-    { "first_table" => first_table, "second_table" => second_table, "primary_key" => @primary_keys[first_table], "foreign_key" => foreign_key }
+  def define_relationship(first_table, second_table, primary_key, foreign_key)
+    { "first_table" => first_table, "second_table" => second_table, "primary_key" => primary_key, "foreign_key" => foreign_key }
   end
 
-  def define_belongs_relationship(first_table, second_table, foreign_key)
-    foreign_key = @primary_keys[second_table] if foreign_key == ""
-    { "first_table" => first_table, "second_table" => second_table, "primary_key" => @primary_keys[first_table], "foreign_key" => foreign_key }
+  def has_one_relationship_fk(foreign_key, second_table)
+    foreign_key ||= second_table.singularize + "_id"
+  end
+
+  def has_relationship_fk(foreign_key, first_table)
+    foreign_key ||= first_table.singularize + "_id"
+  end
+
+  def belongs_relationship_fk(foreign_key, second_table)
+    foreign_key ||= @primary_keys[second_table]
   end
 
   def determine_relationship(association)
@@ -129,6 +141,8 @@ class ErdController < ApplicationController
       return "has_one"
     elsif association_name.include? "HasMany"
       return "has_many"
+    elsif association_name.include? "HasAndBelongsToMany"
+      return "has_and_belongs_to_many"
     elsif association_name.include? "BelongsTo"
       return "belongs_to"
     elsif association_name.include? "Through"
@@ -160,6 +174,7 @@ class ErdController < ApplicationController
   def assign_associations
     @table_associations = [{"has_one" => @has_one},
       {"has_many" => @has_many},
+      {"has_and_belongs_to_many" => @has_and_belongs_to_many},
       {"belongs_to" => @belongs_to},
       {"belongs_to_join" => @belongs_to_join},
       {"other" => @other},
@@ -174,7 +189,7 @@ class ErdController < ApplicationController
     get_tables_classes
     get_tables_info
 
-    @has_one, @has_many, @belongs_to, @belongs_to_join, @through, @other = [], [], [], [], [], []
+    @has_one, @has_many, @has_and_belongs_to_many, @belongs_to, @belongs_to_join, @through, @other = [], [], [], [], [], [], []
 
     get_associations
     determine_join_associations
@@ -187,7 +202,8 @@ class ErdController < ApplicationController
       { name: "sexy" }
       ]}
 
-    render json: { "tables" => @table_info, "associations" => @table_associations }
+      p @table_associations
+      render json: { "tables" => @table_info, "associations" => @table_associations }
   end
 
   def create
