@@ -11,10 +11,29 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150612025557) do
+ActiveRecord::Schema.define(version: 20150614032636) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "accounts", force: :cascade do |t|
+    t.integer "user_id"
+    t.string  "payment_type"
+    t.string  "account_number"
+    t.text    "billing_address"
+  end
+
+  create_table "authors", force: :cascade do |t|
+    t.integer  "authors_books_id"
+    t.string   "name"
+    t.datetime "created_at",       null: false
+    t.datetime "updated_at",       null: false
+  end
+
+  create_table "authors_books", force: :cascade do |t|
+    t.integer "author_id"
+    t.integer "book_id"
+  end
 
   create_table "bids", force: :cascade do |t|
     t.integer  "item_id"
@@ -22,6 +41,14 @@ ActiveRecord::Schema.define(version: 20150612025557) do
     t.float    "amount"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "books", force: :cascade do |t|
+    t.integer  "authors_books_id"
+    t.string   "title"
+    t.date     "publication_date"
+    t.datetime "created_at",       null: false
+    t.datetime "updated_at",       null: false
   end
 
   create_table "categories", force: :cascade do |t|
@@ -58,6 +85,7 @@ ActiveRecord::Schema.define(version: 20150612025557) do
   add_index "items", ["seller_id", "buyer_id"], name: "index_items_on_seller_id_and_buyer_id", using: :btree
 
   create_table "users", force: :cascade do |t|
+    t.integer  "account_id"
     t.string   "username"
     t.string   "password_hash"
     t.string   "first_name"
