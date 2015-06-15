@@ -4,8 +4,17 @@ class ErdController < ApplicationController
     ActiveRecord::Base.descendants
   end
 
+  def remove_duplicates(target)
+    target.uniq!
+  end
+
   def get_tables_names(schema)
-    schema[1..-1].each {|table| @table_names << table.to_s }
+    schema[1..-1].each {|table| get_table_name(table)}
+    remove_duplicates(@table_names)
+  end
+
+  def get_table_name(table)
+    @table_names << table.to_s unless table.to_s.include?('#<Class:') == true
   end
 
   def get_tables_classes
@@ -18,6 +27,7 @@ class ErdController < ApplicationController
 
   def get_tables_info
     @table_classes.each {|table| get_table_detail(table) }
+    remove_duplicates(@table_info)
   end
 
   def get_table_detail(table)
@@ -93,8 +103,10 @@ class ErdController < ApplicationController
       fk = has_relationship_fk(foreign_key, first_table)
       @has_and_belongs_to_many << define_relationship(first_table, second_table, @primary_keys[first_table], fk)
     elsif association_type == "belongs_to"
-      belongs_relationship_fk(foreign_key, second_table)
-      @belongs_to << define_relationship(first_table, second_table, @primary_keys[first_table], fk)
+      fk = belongs_relationship_fk(foreign_key, second_table)
+      unless second_table == "left_sides"
+        @belongs_to << define_relationship(first_table, second_table, @primary_keys[first_table], fk)
+      end
     elsif association_type == "through"
       delegate = association.delegate_reflection
       relationship_type = determine_relationship(delegate)
@@ -177,8 +189,9 @@ class ErdController < ApplicationController
       {"has_and_belongs_to_many" => @has_and_belongs_to_many},
       {"belongs_to" => @belongs_to},
       {"belongs_to_join" => @belongs_to_join},
-      {"other" => @other},
-      { "dating" => [{"first_table" => "rob", "second_table" => "angie", "source" => "dbc", "through" => "shared nerdiness", "foreign key" => "rob's amazing cock" }] }]
+      {"other" => @other}
+      # { "dating" => [{"first_table" => "rob", "second_table" => "angie", "source" => "dbc", "through" => "shared nerdiness", "foreign key" => "rob's amazing cock" }]}
+    ]
   end
 
   def index
@@ -195,15 +208,14 @@ class ErdController < ApplicationController
     determine_join_associations
     assign_associations
 
-    @table_info << { "rob" => [
-      { name: "rob", type: "aussy", null: false, default: "super sexy" },
-      { name: "is" },
-      { name: "super" },
-      { name: "sexy" }
-      ]}
-
-      p @table_associations
-      render json: { "tables" => @table_info, "associations" => @table_associations }
+    # @table_info << { "rob" => [
+    #   { name: "rob", type: "aussy", null: false, default: "super sexy" },
+    #   { name: "is" },
+    #   { name: "super" },
+    #   { name: "sexy" }
+    #   ]}
+    p @table_info
+    render json: { "tables" => @table_info, "associations" => @table_associations }
   end
 
   def create
